@@ -1,4 +1,6 @@
 ﻿using CatalogoApi.Context;
+using CatalogoApi.DTOs;
+using CatalogoApi.DTOs.Mappings;
 using CatalogoApi.Models;
 using CatalogoApi.Repositories.Interface;
 using Microsoft.AspNetCore.Mvc;
@@ -13,10 +15,13 @@ public class ProdutosController : ControllerBase
 {
   
     private readonly IProdutoRepository _produtoRepository;
+    private readonly ILogger<ProdutosController> _logger;
 
-    public ProdutosController(IProdutoRepository produtoRepository)
+    public ProdutosController(IProdutoRepository produtoRepository, 
+                              ILogger<ProdutosController> logger)
     {
         _produtoRepository = produtoRepository;
+        _logger = logger;
     }
 
     [HttpGet]
@@ -27,7 +32,9 @@ public class ProdutosController : ControllerBase
         if (produtos is null)
             return NotFound("Produtos não encontrados");
 
-        return Ok(produtos);
+        var produtosDto = produtos.ToProdutosDTOList();
+
+        return Ok(produtosDto);
 
     }
 
@@ -36,8 +43,12 @@ public class ProdutosController : ControllerBase
     {
         var produto = _produtoRepository.Get(p => p.ProdutoId == id);
 
-        if (produto is null)
-            return NotFound("Produto não encontrado");
+        if (produto is null){
+            _logger.LogWarning("Produto com id {id} não encontrado", id);
+            return NotFound("Produto não encontrado"); 
+        }
+
+        var produtoDto = produto.ToProdutosDTO();
         return Ok(produto);
     }
 
@@ -51,39 +62,58 @@ public class ProdutosController : ControllerBase
     }
 
     [HttpPost]
-    public ActionResult Post(Produto produto)
+    public ActionResult Post(ProdutoDTO produtoDto)
     {
-        if (produto is null)
-            return BadRequest("Produto é nulo");
+        if (produtoDto is null)
+        {
+            _logger.LogWarning("Dados inválidos...");
+            return BadRequest("Dados inválidos...");
+        }
+
+
+        var produto = produtoDto.ToProdutos();
+
         var novoProduto = _produtoRepository.Create(produto);
-        return new CreatedAtRouteResult("ObterProduto", new { id = novoProduto.ProdutoId }, novoProduto);
+
+        var novoProdutoDto = novoProduto.ToProdutosDTO();
+        return new CreatedAtRouteResult("ObterProduto", new { id = novoProdutoDto.ProdutoId }, novoProduto);
     }
 
     [HttpPut("id{id:int}")]
-    public ActionResult Put(int id, Produto produto)
+    public ActionResult Put(int id, ProdutoDTO produtoDto)
     {
-        if (id != produto.ProdutoId)
-            return BadRequest();
+        if (id != produtoDto.ProdutoId)
+        {
+            _logger.LogWarning("Dados inválidos...");
+            return BadRequest("Dados inválidos");
+        }
 
-        var ProdutoAtualizado = _produtoRepository.Update(produto);
+        var produto = produtoDto.ToProdutos();
 
+        var produtoAtualizado = _produtoRepository.Update(produto);
 
+        var produtoAtualizadoDto = produtoAtualizado.ToProdutosDTO();
 
-        return Ok(ProdutoAtualizado);
+        return Ok(produtoAtualizadoDto);
 
     }
 
     [HttpDelete("id{id:int}")]
-    public ActionResult Delete(int id)
+    public ActionResult<ProdutoDTO> Delete(int id)
     {
         var produto = _produtoRepository.Get(p => p.ProdutoId == id);
         if (produto is null)
+        {
+            _logger.LogWarning("Produto com id {id} não encontrado", id);
             return NotFound("Produto não encontrado");
+        }
 
-        var deletado = _produtoRepository.Delete(produto);
-      
+        var produtoExcluido = _produtoRepository.Delete(produto);
 
-        return Ok(deletado);
+        var categoriaExcluidaDto = produtoExcluido.ToProdutosDTO();
+
+
+        return Ok(categoriaExcluidaDto);
     }
 
 }
