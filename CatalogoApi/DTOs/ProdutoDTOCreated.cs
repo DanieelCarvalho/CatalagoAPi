@@ -1,10 +1,12 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Newtonsoft.Json;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace CatalogoApi.DTOs;
 
-public class ProdutoDTO
+public class ProdutoDTOCreated
 {
+    [JsonIgnore]
     public int ProdutoId { get; set; }
 
     [Required]

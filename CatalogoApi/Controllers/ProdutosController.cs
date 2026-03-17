@@ -1,8 +1,11 @@
-﻿using CatalogoApi.Context;
+﻿using Azure;
+using CatalogoApi.Context;
 using CatalogoApi.DTOs;
 using CatalogoApi.DTOs.Mappings;
 using CatalogoApi.Models;
+using CatalogoApi.Pagination;
 using CatalogoApi.Repositories.Interface;
+using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -25,21 +28,21 @@ public class ProdutosController : ControllerBase
     }
 
     [HttpGet]
-    public ActionResult<IEnumerable<Produto>> Get()
+    public ActionResult<IEnumerable<ProdutoDTOResponse>> Get()
     {
         var produtos = _produtoRepository.GetAll();
 
         if (produtos is null)
             return NotFound("Produtos não encontrados");
 
-        var produtosDto = produtos.ToProdutosDTOList();
+        var produtosDto = produtos.ToProdutoDTOResponseList();
 
         return Ok(produtosDto);
 
     }
 
-    [HttpGet("{id:int:min(1)}", Name="ObterProduto")]
-    public ActionResult<Produto> Get(int id)
+    [HttpGet("{id}", Name="ObterProduto")]
+    public ActionResult<ProdutoDTOResponse> Get(int id)
     {
         var produto = _produtoRepository.Get(p => p.ProdutoId == id);
 
@@ -48,21 +51,34 @@ public class ProdutosController : ControllerBase
             return NotFound("Produto não encontrado"); 
         }
 
-        var produtoDto = produto.ToProdutosDTO();
-        return Ok(produto);
+        var produtoDto = produto.ToProdutoDTOResponse();
+        return Ok(produtoDto);
     }
 
-    [HttpGet("produtos/{id}")]
-    public ActionResult<IEnumerable<Produto>> GetProdutosByCategoriaId(int id)
+    [HttpGet("categoria/{categoriaId}")]
+    public ActionResult<IEnumerable<ProdutoDTOResponse>> GetProdutosByCategoriaId([FromRoute]  int categoriaId)
     {
-        var produtos = _produtoRepository.GetProdutosByCategoriaId(id);
+        var produtos = _produtoRepository.GetProdutosByCategoriaId(categoriaId);
+
         if (produtos is null)
             return NotFound("Produtos não encontrados para a categoria informada");
-        return Ok(produtos);
+
+        var produtosDto = produtos.ToProdutoDTOResponseList(); 
+        return Ok(produtosDto);
+    }
+
+    [HttpGet("pagination")]
+    public ActionResult<IEnumerable<ProdutoDTOResponse>> Get([FromQuery] ProdutosParameters produtosParams)
+    {
+        var produtos = _produtoRepository.GetProdutos(produtosParams);
+        if (produtos is null || !produtos.Any())
+            return NotFound("Produtos não encontrados");
+        var produtosDto = produtos.ToProdutoDTOResponseList();
+        return Ok(produtosDto);
     }
 
     [HttpPost]
-    public ActionResult Post(ProdutoDTO produtoDto)
+    public ActionResult<ProdutoDTOCreated> Post(ProdutoDTOCreated produtoDto)
     {
         if (produtoDto is null)
         {
@@ -71,35 +87,72 @@ public class ProdutosController : ControllerBase
         }
 
 
-        var produto = produtoDto.ToProdutos();
+        var produto = produtoDto.ToProduto();
 
         var novoProduto = _produtoRepository.Create(produto);
 
-        var novoProdutoDto = novoProduto.ToProdutosDTO();
+        var novoProdutoDto = novoProduto.ToProdutoDTOCreated();
         return new CreatedAtRouteResult("ObterProduto", new { id = novoProdutoDto.ProdutoId }, novoProduto);
     }
 
-    [HttpPut("id{id:int}")]
-    public ActionResult Put(int id, ProdutoDTO produtoDto)
+    //[HttpPut("id{id:int}")]
+    //public ActionResult<ProdutoDTOResponse> Put(int id, ProdutoDTOCreated produtoDto)
+    //{
+    //    if (id != produtoDto.ProdutoId)
+    //    {
+    //        _logger.LogWarning("Dados inválidos...");
+    //        return BadRequest("Dados inválidos");
+    //    }
+
+    //    var produto = produtoDto.ToProduto();
+
+    //    var produtoAtualizado = _produtoRepository.Update(produto);
+
+    //    var produtoAtualizadoDto = produtoAtualizado.ToProdutoDTOResponse();
+
+    //    return Ok(produtoAtualizadoDto);
+
+    //}
+
+    [HttpPatch("{id}/UpdatePartial")]
+    public ActionResult<ProdutoDTOUpdateResponse> Patch(int id, 
+           JsonPatchDocument<ProdutoDTOUpdateRequest> patchProdutoDTO)
     {
-        if (id != produtoDto.ProdutoId)
+        if (patchProdutoDTO is null || id <=0)
         {
             _logger.LogWarning("Dados inválidos...");
             return BadRequest("Dados inválidos");
         }
+        var produto = _produtoRepository.Get(p => p.ProdutoId == id);
 
-        var produto = produtoDto.ToProdutos();
+        if (produto is null)
+        {
+            _logger.LogWarning("Produto com id {id} não encontrado", id);
+            return NotFound("Produto não encontrado");
+        }
 
+        var produtoUpdateRequest = produto.ToProdutoUpdateRequest();
+        patchProdutoDTO.ApplyTo(produtoUpdateRequest, ModelState);
+
+        if (!ModelState.IsValid || !TryValidateModel(produtoUpdateRequest))
+        {
+            return BadRequest(ModelState);
+        }
+
+      
+        produto.UpdateFromRequest(produtoUpdateRequest);
+
+       
         var produtoAtualizado = _produtoRepository.Update(produto);
 
-        var produtoAtualizadoDto = produtoAtualizado.ToProdutosDTO();
+       
+        var response = produtoAtualizado.ToProdutoUpdateResponseDTO();
 
-        return Ok(produtoAtualizadoDto);
-
+        return Ok(response);
     }
 
-    [HttpDelete("id{id:int}")]
-    public ActionResult<ProdutoDTO> Delete(int id)
+    [HttpDelete("{id}")]
+    public ActionResult<ProdutoDTOResponse> Delete(int id)
     {
         var produto = _produtoRepository.Get(p => p.ProdutoId == id);
         if (produto is null)
@@ -110,7 +163,7 @@ public class ProdutosController : ControllerBase
 
         var produtoExcluido = _produtoRepository.Delete(produto);
 
-        var categoriaExcluidaDto = produtoExcluido.ToProdutosDTO();
+        var categoriaExcluidaDto = produtoExcluido.ToProdutoDTOResponse();
 
 
         return Ok(categoriaExcluidaDto);
