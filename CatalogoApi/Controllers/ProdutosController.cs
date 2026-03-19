@@ -8,6 +8,7 @@ using CatalogoApi.Repositories.Interface;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace CatalogoApi.Controllers;
 
@@ -73,6 +74,30 @@ public class ProdutosController : ControllerBase
         var produtos = _produtoRepository.GetProdutos(produtosParams);
         if (produtos is null || !produtos.Any())
             return NotFound("Produtos não encontrados");
+
+        return ObterProdutos(produtos);
+    }
+
+    [HttpGet("filter/preco/pagination")]
+    public ActionResult<IEnumerable<ProdutoDTOResponse>> GetProdutosFilterPreco([FromQuery] ProdutosFiltroPreco produtosFiltroPreco)
+    {
+        var produtos = _produtoRepository.GetProdutosFiltroPreco(produtosFiltroPreco);
+        return ObterProdutos(produtos);
+    }
+
+    private ActionResult<IEnumerable<ProdutoDTOResponse>> ObterProdutos(PagedList<Produto> produtos)
+    {
+        var metadata = new
+        {
+            produtos.TotalCount,
+            produtos.PageSize,
+            produtos.CurrentPage,
+            produtos.TotalPages,
+            produtos.HasNext,
+            produtos.HasPrevious
+        };
+        Response.Headers.Append("X-Pagination", JsonSerializer.Serialize(metadata));
+
         var produtosDto = produtos.ToProdutoDTOResponseList();
         return Ok(produtosDto);
     }

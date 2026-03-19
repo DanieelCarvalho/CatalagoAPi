@@ -2,8 +2,10 @@
 using CatalogoApi.DTOs.Mappings;
 using CatalogoApi.Filters;
 using CatalogoApi.Models;
+using CatalogoApi.Pagination;
 using CatalogoApi.Repositories.Interface;
 using Microsoft.AspNetCore.Mvc;
+using System.Text.Json;
 
 
 namespace CatalogoApi.Controllers;
@@ -12,10 +14,10 @@ namespace CatalogoApi.Controllers;
 [ApiController]
 public class CategoriaController  : ControllerBase
 {
-    private readonly IRepository<Categoria> _repository;
+    private readonly ICategoriaRepository _repository;
     private readonly ILogger<CategoriaController> _logger;
 
-    public CategoriaController(IRepository<Categoria> repository,
+    public CategoriaController(ICategoriaRepository repository,
                                ILogger<CategoriaController> logger)
     {
         _repository = repository;
@@ -58,16 +60,51 @@ public class CategoriaController  : ControllerBase
         return Ok(categoriaDto);
     }
 
-    //[HttpGet("produtos")]
-    //public ActionResult<IEnumerable<Categoria>> GetCategoriasProdutos()
-    //{
-    //    // return _context.Categorias.Include(p  => p.Produtos).AsNoTracking().ToList();
-    //    return _context.Categorias.Include(p => p.Produtos)
-    //                              .Where(c=> c.CategoriaId <=5)
-    //                              .AsNoTracking()
-    //                              .ToList();
+    [HttpGet("pagination")]
+    public ActionResult<IEnumerable<CategoriaDTO>> GetCategoriasPaginacao([FromQuery] CategoriasParameters categoriasParameters)
+    {
+        var categorias = _repository.GetCategorias(categoriasParameters);
+        if (categorias is null)
+            return NotFound("Categoria não encontrada");
+        var metadata = new
+        {
+            categorias.TotalCount,
+            categorias.PageSize,
+            categorias.CurrentPage,
+            categorias.TotalPages,
+            categorias.HasNext,
+            categorias.HasPrevious
+        };
+        Response.Headers.Append("X-Pagination", JsonSerializer.Serialize(metadata));
 
-    //}
+        var categoriasDto = categorias.ToCategoriaDTOList();
+        return Ok(categoriasDto);
+    }
+
+    [HttpGet("filter/nome/pagination")]
+    public ActionResult<IEnumerable<CategoriaDTO>> GetCategoriasFiltroNomePaginacao([FromQuery] CategoriaFiltroNome categoriaFiltroNome)
+    {
+        var categorias = _repository.GetCategoriasFiltroNome(categoriaFiltroNome);
+        return ObterCategorias(categorias);
+    }
+
+    private ActionResult<IEnumerable<CategoriaDTO>> ObterCategorias(PagedList<Categoria>? categorias)
+    {
+        if (categorias is null)
+            return NotFound("Categoria não encontrada");
+        var metadata = new
+        {
+            categorias.TotalCount,
+            categorias.PageSize,
+            categorias.CurrentPage,
+            categorias.TotalPages,
+            categorias.HasNext,
+            categorias.HasPrevious
+        };
+        Response.Headers.Append("X-Pagination", JsonSerializer.Serialize(metadata));
+        var categoriasDto = categorias.ToCategoriaDTOList();
+        return Ok(categoriasDto);
+    }
 
     [HttpPost]
     public ActionResult<CategoriaDTO> Post(CategoriaDTO categoriaDto)
