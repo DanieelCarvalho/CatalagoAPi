@@ -225,3 +225,6 @@ C:\Users\danie\OneDrive\Documents\CatalogoApi\CatalogoApi\bin\Debug\net10.0\Micr
 C:\Users\danie\OneDrive\Documents\CatalogoApi\CatalogoApi\bin\Debug\net10.0\Newtonsoft.Json.dll
 C:\Users\danie\OneDrive\Documents\CatalogoApi\CatalogoApi\bin\Debug\net10.0\Newtonsoft.Json.Bson.dll
 C:\Users\danie\OneDrive\Documents\CatalogoApi\CatalogoApi\bin\Debug\net10.0\Swashbuckle.AspNetCore.SwaggerGen.dll
+C:\Users\danie\OneDrive\Documents\CatalogoApi\CatalogoApi\bin\Debug\net10.0\JetBrains.Annotations.dll
+C:\Users\danie\OneDrive\Documents\CatalogoApi\CatalogoApi\bin\Debug\net10.0\X.PagedList.dll
+C:\Users\danie\OneDrive\Documents\CatalogoApi\CatalogoApi\bin\Debug\net10.0\X.PagedList.Mvc.Core.dll

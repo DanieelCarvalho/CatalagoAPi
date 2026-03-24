@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
+using X.PagedList;
 
 namespace CatalogoApi.Controllers;
 
@@ -29,9 +30,9 @@ public class ProdutosController : ControllerBase
     }
 
     [HttpGet]
-    public ActionResult<IEnumerable<ProdutoDTOResponse>> Get()
+    public async Task<ActionResult<IEnumerable<ProdutoDTOResponse>>> Get()
     {
-        var produtos = _produtoRepository.GetAll();
+        var produtos = await _produtoRepository.GetAllAsync();
 
         if (produtos is null)
             return NotFound("Produtos não encontrados");
@@ -43,9 +44,9 @@ public class ProdutosController : ControllerBase
     }
 
     [HttpGet("{id}", Name="ObterProduto")]
-    public ActionResult<ProdutoDTOResponse> Get(int id)
+    public async Task<ActionResult<ProdutoDTOResponse>> Get(int id)
     {
-        var produto = _produtoRepository.Get(p => p.ProdutoId == id);
+        var produto = await _produtoRepository.GetAsync(p => p.ProdutoId == id);
 
         if (produto is null){
             _logger.LogWarning("Produto com id {id} não encontrado", id);
@@ -57,9 +58,9 @@ public class ProdutosController : ControllerBase
     }
 
     [HttpGet("categoria/{categoriaId}")]
-    public ActionResult<IEnumerable<ProdutoDTOResponse>> GetProdutosByCategoriaId([FromRoute]  int categoriaId)
+    public async Task<ActionResult<IEnumerable<ProdutoDTOResponse>>> GetProdutosByCategoriaId([FromRoute]  int categoriaId)
     {
-        var produtos = _produtoRepository.GetProdutosByCategoriaId(categoriaId);
+        var produtos = await _produtoRepository.GetProdutosByCategoriaIdAsync(categoriaId);
 
         if (produtos is null)
             return NotFound("Produtos não encontrados para a categoria informada");
@@ -69,9 +70,9 @@ public class ProdutosController : ControllerBase
     }
 
     [HttpGet("pagination")]
-    public ActionResult<IEnumerable<ProdutoDTOResponse>> Get([FromQuery] ProdutosParameters produtosParams)
+    public async Task<ActionResult<IEnumerable<ProdutoDTOResponse>>> Get([FromQuery] ProdutosParameters produtosParams)
     {
-        var produtos = _produtoRepository.GetProdutos(produtosParams);
+        var produtos = await _produtoRepository.GetProdutosAsync(produtosParams);
         if (produtos is null || !produtos.Any())
             return NotFound("Produtos não encontrados");
 
@@ -79,22 +80,22 @@ public class ProdutosController : ControllerBase
     }
 
     [HttpGet("filter/preco/pagination")]
-    public ActionResult<IEnumerable<ProdutoDTOResponse>> GetProdutosFilterPreco([FromQuery] ProdutosFiltroPreco produtosFiltroPreco)
+    public async Task<ActionResult<IEnumerable<ProdutoDTOResponse>>> GetProdutosFilterPreco([FromQuery] ProdutosFiltroPreco produtosFiltroPreco)
     {
-        var produtos = _produtoRepository.GetProdutosFiltroPreco(produtosFiltroPreco);
+        var produtos = await _produtoRepository.GetProdutosFiltroPrecoAsync(produtosFiltroPreco);
         return ObterProdutos(produtos);
     }
 
-    private ActionResult<IEnumerable<ProdutoDTOResponse>> ObterProdutos(PagedList<Produto> produtos)
+    private ActionResult<IEnumerable<ProdutoDTOResponse>> ObterProdutos(IPagedList<Produto> produtos)
     {
         var metadata = new
         {
-            produtos.TotalCount,
+            produtos.Count,
             produtos.PageSize,
-            produtos.CurrentPage,
-            produtos.TotalPages,
-            produtos.HasNext,
-            produtos.HasPrevious
+            produtos.PageCount,
+            produtos.TotalItemCount,
+            produtos.HasNextPage,
+            produtos.HasPreviousPage
         };
         Response.Headers.Append("X-Pagination", JsonSerializer.Serialize(metadata));
 
@@ -103,7 +104,7 @@ public class ProdutosController : ControllerBase
     }
 
     [HttpPost]
-    public ActionResult<ProdutoDTOCreated> Post(ProdutoDTOCreated produtoDto)
+    public async Task<ActionResult<ProdutoDTOCreated>> Post(ProdutoDTOCreated produtoDto)
     {
         if (produtoDto is null)
         {
@@ -114,33 +115,33 @@ public class ProdutosController : ControllerBase
 
         var produto = produtoDto.ToProduto();
 
-        var novoProduto = _produtoRepository.Create(produto);
+        var novoProduto = await _produtoRepository.CreateAsync(produto);
 
         var novoProdutoDto = novoProduto.ToProdutoDTOCreated();
         return new CreatedAtRouteResult("ObterProduto", new { id = novoProdutoDto.ProdutoId }, novoProduto);
     }
 
-    //[HttpPut("id{id:int}")]
-    //public ActionResult<ProdutoDTOResponse> Put(int id, ProdutoDTOCreated produtoDto)
-    //{
-    //    if (id != produtoDto.ProdutoId)
-    //    {
-    //        _logger.LogWarning("Dados inválidos...");
-    //        return BadRequest("Dados inválidos");
-    //    }
+    [HttpPut("id{id:int}")]
+    public async Task<ActionResult<ProdutoDTOResponse>> Put(int id, ProdutoDTOCreated produtoDto)
+    {
+        if (id != produtoDto.ProdutoId)
+        {
+            _logger.LogWarning("Dados inválidos...");
+            return BadRequest("Dados inválidos");
+        }
 
-    //    var produto = produtoDto.ToProduto();
+        var produto = produtoDto.ToProduto();
 
-    //    var produtoAtualizado = _produtoRepository.Update(produto);
+        var produtoAtualizado = await _produtoRepository.UpdateAsync(produto);
 
-    //    var produtoAtualizadoDto = produtoAtualizado.ToProdutoDTOResponse();
+        var produtoAtualizadoDto = produtoAtualizado.ToProdutoDTOResponse();
 
-    //    return Ok(produtoAtualizadoDto);
+        return Ok(produtoAtualizadoDto);
 
-    //}
+    }
 
     [HttpPatch("{id}/UpdatePartial")]
-    public ActionResult<ProdutoDTOUpdateResponse> Patch(int id, 
+    public async Task<ActionResult<ProdutoDTOUpdateResponse>> Patch(int id, 
            JsonPatchDocument<ProdutoDTOUpdateRequest> patchProdutoDTO)
     {
         if (patchProdutoDTO is null || id <=0)
@@ -148,7 +149,7 @@ public class ProdutosController : ControllerBase
             _logger.LogWarning("Dados inválidos...");
             return BadRequest("Dados inválidos");
         }
-        var produto = _produtoRepository.Get(p => p.ProdutoId == id);
+        var produto = await _produtoRepository.GetAsync(p => p.ProdutoId == id);
 
         if (produto is null)
         {
@@ -168,7 +169,7 @@ public class ProdutosController : ControllerBase
         produto.UpdateFromRequest(produtoUpdateRequest);
 
        
-        var produtoAtualizado = _produtoRepository.Update(produto);
+        var produtoAtualizado = await _produtoRepository.UpdateAsync(produto);
 
        
         var response = produtoAtualizado.ToProdutoUpdateResponseDTO();
@@ -177,16 +178,16 @@ public class ProdutosController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    public ActionResult<ProdutoDTOResponse> Delete(int id)
+    public async Task<ActionResult<ProdutoDTOResponse>> Delete(int id)
     {
-        var produto = _produtoRepository.Get(p => p.ProdutoId == id);
+        var produto = await _produtoRepository.GetAsync(p => p.ProdutoId == id);
         if (produto is null)
         {
             _logger.LogWarning("Produto com id {id} não encontrado", id);
             return NotFound("Produto não encontrado");
         }
 
-        var produtoExcluido = _produtoRepository.Delete(produto);
+        var produtoExcluido =await _produtoRepository.DeleteAsync(produto);
 
         var categoriaExcluidaDto = produtoExcluido.ToProdutoDTOResponse();
 

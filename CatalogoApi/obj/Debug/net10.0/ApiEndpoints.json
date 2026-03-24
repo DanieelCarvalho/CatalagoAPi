@@ -385,6 +385,37 @@
   },
   {
     "ContainingType": "CatalogoApi.Controllers.ProdutosController",
+    "Method": "Put",
+    "RelativePath": "api/Produtos/id{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "produtoDto",
+        "Type": "CatalogoApi.DTOs.ProdutoDTOCreated",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "CatalogoApi.DTOs.ProdutoDTOResponse",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "CatalogoApi.Controllers.ProdutosController",
     "Method": "Get",
     "RelativePath": "api/Produtos/pagination",
     "HttpMethod": "GET",

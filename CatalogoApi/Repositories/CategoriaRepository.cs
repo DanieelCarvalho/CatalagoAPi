@@ -2,6 +2,8 @@
 using CatalogoApi.Models;
 using CatalogoApi.Pagination;
 using CatalogoApi.Repositories.Interface;
+using X.PagedList;
+
 
 namespace CatalogoApi.Repositories;
 
@@ -11,20 +13,25 @@ public class CategoriaRepository : Repository<Categoria>, ICategoriaRepository
     {
     }
 
-    public PagedList<Categoria> GetCategorias(CategoriasParameters categoriasParams)
+    public async Task<IPagedList<Categoria>> GetCategoriasAsync(CategoriasParameters categoriasParams)
     {
-        var categorias = GetAll().OrderBy(c => c.CategoriaId).AsQueryable();
+        var categorias = await GetAllAsync();
 
-        var  categoriasOrdenadas = PagedList<Categoria>.ToPagedList(categorias, 
-                                                                     categoriasParams.PageNumber, 
-                                                                     categoriasParams.PageSize);
+        var categoriasOrdenadas = categorias.OrderBy(c => c.Nome).AsQueryable();
 
-        return categoriasOrdenadas;
+        //var  resultado = PagedList<Categoria>.ToPagedList(categoriasOrdenadas, 
+        //                                                             categoriasParams.PageNumber, 
+        //                                                             categoriasParams.PageSize);
+
+        var resultado = await categoriasOrdenadas.ToPagedListAsync(categoriasParams.PageNumber, 
+                                                             categoriasParams.PageSize );
+        return resultado;
     }
 
-    public PagedList<Categoria> GetCategoriasFiltroNome(CategoriaFiltroNome categoriaParams)
+    public async Task<IPagedList<Categoria>> GetCategoriasFiltroNomeAsync(CategoriaFiltroNome categoriaParams)
     {
-       var categorias = GetAll().AsQueryable();
+        var categorias = await GetAllAsync();
+
 
         if (!string.IsNullOrEmpty(categoriaParams.Nome))
         {
@@ -32,9 +39,13 @@ public class CategoriaRepository : Repository<Categoria>, ICategoriaRepository
             c.Nome.Contains(categoriaParams.Nome, StringComparison.OrdinalIgnoreCase));
         }
 
-        var categoriasFiltradas = PagedList<Categoria>.ToPagedList(categorias,
-            categoriaParams.PageNumber, categoriaParams.PageSize); 
+        //var categoriasFiltradas = PagedList<Categoria>.ToPagedList(
+        //    categorias.AsQueryable(),
+        //    categoriaParams.PageNumber, 
+        //    categoriaParams.PageSize); 
 
+        var categoriasFiltradas = await categorias.ToPagedListAsync(categoriaParams.PageNumber, 
+                                                                    categoriaParams.PageSize);
 
         return categoriasFiltradas;
     }
