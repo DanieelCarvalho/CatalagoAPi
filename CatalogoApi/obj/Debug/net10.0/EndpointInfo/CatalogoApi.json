@@ -1,5 +1,5 @@
 {
-  "openapi": "3.0.4",
+  "openapi": "3.0.1",
   "info": {
     "title": "CatalogoApi",
     "version": "1.0"
@@ -1015,13 +1015,5 @@
         "additionalProperties": false
       }
     }
-  },
-  "tags": [
-    {
-      "name": "Categoria"
-    },
-    {
-      "name": "Produtos"
-    }
-  ]
+  }
 }
