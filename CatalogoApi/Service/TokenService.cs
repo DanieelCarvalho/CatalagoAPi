@@ -48,10 +48,10 @@ public class TokenService : ITokenService
        return refreshToken;
     }
 
-    public ClaimsPrincipal GetPrincipalFromExpeiredToken(string token,
+    public ClaimsPrincipal GetPrincipalFromExpiredToken(string token,
                                                          IConfiguration _config)
     {
-        var secretKey = _config["Jwt:SecretKey"] ??
+        var secretKey = _config["JWT:SecretKey"] ??
             throw new InvalidOperationException("Invalid key!!");
 
         var tokenValidationParameters = new TokenValidationParameters

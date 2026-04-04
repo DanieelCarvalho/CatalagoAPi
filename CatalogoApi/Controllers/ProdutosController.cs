@@ -5,6 +5,7 @@ using CatalogoApi.DTOs.Mappings;
 using CatalogoApi.Models;
 using CatalogoApi.Pagination;
 using CatalogoApi.Repositories.Interface;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -28,8 +29,8 @@ public class ProdutosController : ControllerBase
         _produtoRepository = produtoRepository;
         _logger = logger;
     }
-
     [HttpGet]
+    [Authorize(Policy = "UserOnly")]
     public async Task<ActionResult<IEnumerable<ProdutoDTOResponse>>> Get()
     {
         var produtos = await _produtoRepository.GetAllAsync();
@@ -42,7 +43,7 @@ public class ProdutosController : ControllerBase
         return Ok(produtosDto);
 
     }
-
+    [Authorize]
     [HttpGet("{id}", Name="ObterProduto")]
     public async Task<ActionResult<ProdutoDTOResponse>> Get(int id)
     {
@@ -56,7 +57,7 @@ public class ProdutosController : ControllerBase
         var produtoDto = produto.ToProdutoDTOResponse();
         return Ok(produtoDto);
     }
-
+    [Authorize]
     [HttpGet("categoria/{categoriaId}")]
     public async Task<ActionResult<IEnumerable<ProdutoDTOResponse>>> GetProdutosByCategoriaId([FromRoute]  int categoriaId)
     {
@@ -68,7 +69,7 @@ public class ProdutosController : ControllerBase
         var produtosDto = produtos.ToProdutoDTOResponseList(); 
         return Ok(produtosDto);
     }
-
+    [Authorize]
     [HttpGet("pagination")]
     public async Task<ActionResult<IEnumerable<ProdutoDTOResponse>>> Get([FromQuery] ProdutosParameters produtosParams)
     {
@@ -78,7 +79,7 @@ public class ProdutosController : ControllerBase
 
         return ObterProdutos(produtos);
     }
-
+    [Authorize]
     [HttpGet("filter/preco/pagination")]
     public async Task<ActionResult<IEnumerable<ProdutoDTOResponse>>> GetProdutosFilterPreco([FromQuery] ProdutosFiltroPreco produtosFiltroPreco)
     {
@@ -102,7 +103,7 @@ public class ProdutosController : ControllerBase
         var produtosDto = produtos.ToProdutoDTOResponseList();
         return Ok(produtosDto);
     }
-
+    [Authorize]
     [HttpPost]
     public async Task<ActionResult<ProdutoDTOCreated>> Post(ProdutoDTOCreated produtoDto)
     {
@@ -120,7 +121,7 @@ public class ProdutosController : ControllerBase
         var novoProdutoDto = novoProduto.ToProdutoDTOCreated();
         return new CreatedAtRouteResult("ObterProduto", new { id = novoProdutoDto.ProdutoId }, novoProduto);
     }
-
+    [Authorize]
     [HttpPut("id{id:int}")]
     public async Task<ActionResult<ProdutoDTOResponse>> Put(int id, ProdutoDTOCreated produtoDto)
     {
@@ -139,7 +140,7 @@ public class ProdutosController : ControllerBase
         return Ok(produtoAtualizadoDto);
 
     }
-
+    [Authorize]
     [HttpPatch("{id}/UpdatePartial")]
     public async Task<ActionResult<ProdutoDTOUpdateResponse>> Patch(int id, 
            JsonPatchDocument<ProdutoDTOUpdateRequest> patchProdutoDTO)
@@ -176,7 +177,7 @@ public class ProdutosController : ControllerBase
 
         return Ok(response);
     }
-
+    [Authorize]
     [HttpDelete("{id}")]
     public async Task<ActionResult<ProdutoDTOResponse>> Delete(int id)
     {

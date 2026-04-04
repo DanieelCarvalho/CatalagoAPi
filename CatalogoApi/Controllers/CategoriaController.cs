@@ -4,6 +4,7 @@ using CatalogoApi.Filters;
 using CatalogoApi.Models;
 using CatalogoApi.Pagination;
 using CatalogoApi.Repositories.Interface;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
 using X.PagedList;
@@ -25,6 +26,7 @@ public class CategoriaController  : ControllerBase
         _logger = logger;
     }
 
+    [Authorize]
     [HttpGet]
     [ServiceFilter(typeof(ApiLogginFilter))]
     public async Task<ActionResult<IEnumerable<CategoriaDTO>>> Get()
@@ -41,7 +43,7 @@ public class CategoriaController  : ControllerBase
         return Ok(categoriasDto);
 
     }
-
+    [Authorize]
     [HttpGet("{id:int}", Name = "ObterCategoria")]
     public async Task<ActionResult<CategoriaDTO>> Get(int id)
     {
@@ -60,7 +62,7 @@ public class CategoriaController  : ControllerBase
 
         return Ok(categoriaDto);
     }
-
+    [Authorize]
     [HttpGet("pagination")]
     public async Task<ActionResult<IEnumerable<CategoriaDTO>>> GetCategoriasPaginacao([FromQuery] CategoriasParameters categoriasParameters)
     {
@@ -70,7 +72,7 @@ public class CategoriaController  : ControllerBase
         //var categoriasDto = categorias.ToCategoriaDTOList();
         return ObterCategorias(categorias);
     }
-
+    [Authorize]
     [HttpGet("filter/nome/pagination")]
     public async Task<ActionResult<IEnumerable<CategoriaDTO>>> GetCategoriasFiltroNomePaginacao([FromQuery] CategoriaFiltroNome categoriaFiltroNome)
     {
@@ -95,7 +97,7 @@ public class CategoriaController  : ControllerBase
         var categoriasDto = categorias.ToCategoriaDTOList();
         return Ok(categoriasDto);
     }
-
+    [Authorize]
     [HttpPost]
     public async Task<ActionResult<CategoriaDTO>> Post(CategoriaDTO categoriaDto)
     {
@@ -115,7 +117,7 @@ public class CategoriaController  : ControllerBase
                                         new { id = novaCategoriaDto.CategoriaId }, 
                                         categoria);
     }
-
+    [Authorize]
     [HttpPut("id{id:int}")]
     public async Task<ActionResult> Put(int id, CategoriaDTO categoriaDto)
     {
@@ -134,8 +136,8 @@ public class CategoriaController  : ControllerBase
         return Ok(categoriaAtualizadaDto);
 
     }
-
     [HttpDelete("id{id:int}")]
+    [Authorize(Policy = "AdminOnly")]
     public async Task<ActionResult<CategoriaDTO>> Delete(int id)
     {
         var categoria = await _repository.GetAsync(c => c.CategoriaId == id);
