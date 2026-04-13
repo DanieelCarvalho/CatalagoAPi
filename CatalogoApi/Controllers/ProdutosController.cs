@@ -17,6 +17,7 @@ namespace CatalogoApi.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
+[ApiConventionType(typeof(DefaultApiConventions))]
 public class ProdutosController : ControllerBase
 {
   
@@ -29,6 +30,13 @@ public class ProdutosController : ControllerBase
         _produtoRepository = produtoRepository;
         _logger = logger;
     }
+
+    /// <summary>
+    /// Exibe uma relação de produtos 
+    /// </summary>
+    /// <returns>
+    /// Retorna uma lista de objetos Produto
+    /// </returns>
     [HttpGet]
     [Authorize(Policy = "UserOnly")]
     public async Task<ActionResult<IEnumerable<ProdutoDTOResponse>>> Get()
@@ -43,6 +51,11 @@ public class ProdutosController : ControllerBase
         return Ok(produtosDto);
 
     }
+    /// <summary>
+    /// Obtem o produto pelo id
+    /// </summary>
+    /// <param name="id">Código do produto</param>
+    /// <returns>Um objeto Produdo</returns>
     [Authorize]
     [HttpGet("{id}", Name="ObterProduto")]
     public async Task<ActionResult<ProdutoDTOResponse>> Get(int id)

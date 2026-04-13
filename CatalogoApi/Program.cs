@@ -8,11 +8,14 @@ using CatalogoApi.Repositories.Interface;
 using CatalogoApi.Service;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using System.Reflection;
 using System.Text;
 using System.Text.Json.Serialization;
+using System.Threading.RateLimiting;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -50,6 +53,12 @@ builder.Services.AddSwaggerGen(c =>
         In = ParameterLocation.Header,
         Description = "Bearer JWT",
     });
+
+    var xmlFileName = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+
+    c.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFileName));
+
+
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
@@ -66,6 +75,8 @@ builder.Services.AddSwaggerGen(c =>
     });
     
 });
+
+
 
 string mySqlConnection = builder.Configuration.GetConnectionString("DefaultConnection");
 
@@ -118,6 +129,48 @@ builder.Services.AddAuthorization(options =>
 
 });
 
+
+builder.Services.AddCors(options =>
+ options.AddPolicy("OrigensComAcessoPermitido",  policy =>
+ {
+     policy.WithOrigins("https://localhost:7022")
+     .WithMethods("GET", "POST")
+     .AllowAnyHeader();
+          
+ })
+ );
+
+builder.Services.AddRateLimiter(rateLimiterOptions =>
+{
+    rateLimiterOptions.AddFixedWindowLimiter(policyName: "Fixedwindow", options =>
+    {
+        options.PermitLimit = 1;
+        options.Window = TimeSpan.FromSeconds(5);
+        options.QueueLimit = 2;
+        options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+    });
+    rateLimiterOptions.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+});
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
+    
+    RateLimitPartition.GetFixedWindowLimiter(
+    partitionKey: httpContext.User.Identity?.Name ??
+                  httpContext.Request.Headers.Host.ToString(),
+    factory: partition => new FixedWindowRateLimiterOptions
+    {
+
+        AutoReplenishment = true,
+        PermitLimit = 2,
+        QueueLimit = 0,
+        Window = TimeSpan.FromSeconds(10)
+    }));
+});
+
+
 builder.Services.AddScoped<ApiLogginFilter>();
 builder.Services.AddScoped<ICategoriaRepository, CategoriaRepository>();
 builder.Services.AddScoped<IProdutoRepository, ProdutoRepository>();
@@ -147,6 +200,9 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseAuthentication();
+
+app.UseRateLimiter();
+app.UseCors();
 app.UseAuthorization();
 
 app.MapControllers();

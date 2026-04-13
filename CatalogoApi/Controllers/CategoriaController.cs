@@ -5,15 +5,21 @@ using CatalogoApi.Models;
 using CatalogoApi.Pagination;
 using CatalogoApi.Repositories.Interface;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using System.Text.Json;
 using X.PagedList;
-
+using Microsoft.AspNetCore.Http;
 
 namespace CatalogoApi.Controllers;
 
-[Route("api/[controller]")]
+[EnableCors("OrigensComAcessoPermitido")]
+[Route("[controller]")]
 [ApiController]
+//[ApiConventionType(typeof(DefaultApiConventions))]
+
+//[EnableRateLimiting("Fixedwindow")]
 public class CategoriaController  : ControllerBase
 {
     private readonly ICategoriaRepository _repository;
@@ -26,9 +32,20 @@ public class CategoriaController  : ControllerBase
         _logger = logger;
     }
 
-    [Authorize]
+    /// <summary>
+    /// Obtem uma lista de onjetos Categorias
+    /// </summary>
+    /// <returns>
+    /// Uma lista de objetos Categoria
+    /// </returns>
+    /// 
+    //[Authorize]
     [HttpGet]
+    [DisableRateLimiting]
     [ServiceFilter(typeof(ApiLogginFilter))]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
+    [ProducesDefaultResponseType]
     public async Task<ActionResult<IEnumerable<CategoriaDTO>>> Get()
     {
 
@@ -43,7 +60,14 @@ public class CategoriaController  : ControllerBase
         return Ok(categoriasDto);
 
     }
-    [Authorize]
+
+    /// <summary>
+    /// Obter uma Categoria pelo seu Id
+    /// </summary>
+    /// <param name="id"></param>
+    /// <returns> Objetos Categorias</returns>
+    //[Authorize]
+    [DisableCors]
     [HttpGet("{id:int}", Name = "ObterCategoria")]
     public async Task<ActionResult<CategoriaDTO>> Get(int id)
     {
@@ -62,7 +86,8 @@ public class CategoriaController  : ControllerBase
 
         return Ok(categoriaDto);
     }
-    [Authorize]
+
+    //[Authorize]
     [HttpGet("pagination")]
     public async Task<ActionResult<IEnumerable<CategoriaDTO>>> GetCategoriasPaginacao([FromQuery] CategoriasParameters categoriasParameters)
     {
@@ -72,7 +97,7 @@ public class CategoriaController  : ControllerBase
         //var categoriasDto = categorias.ToCategoriaDTOList();
         return ObterCategorias(categorias);
     }
-    [Authorize]
+    //[Authorize]
     [HttpGet("filter/nome/pagination")]
     public async Task<ActionResult<IEnumerable<CategoriaDTO>>> GetCategoriasFiltroNomePaginacao([FromQuery] CategoriaFiltroNome categoriaFiltroNome)
     {
@@ -97,6 +122,21 @@ public class CategoriaController  : ControllerBase
         var categoriasDto = categorias.ToCategoriaDTOList();
         return Ok(categoriasDto);
     }
+
+    /// <summary>
+    /// Inclui uma nova categoria
+    /// </summary>
+    /// <remarks>
+    /// Exemplo de request:
+    /// POST api/categoria
+    /// {
+    /// "CategoriaId": 1,
+    /// "Nome": "Bebidas",
+    /// "ImagemUrl": "https://www.google.com/imagem/bebidas.png"
+    /// }
+    /// </remarks>
+    /// <param name="categoriaDto"></param>
+    /// <returns>Retorna um objeto Categorias incluído</returns>
     [Authorize]
     [HttpPost]
     public async Task<ActionResult<CategoriaDTO>> Post(CategoriaDTO categoriaDto)
@@ -119,6 +159,7 @@ public class CategoriaController  : ControllerBase
     }
     [Authorize]
     [HttpPut("id{id:int}")]
+    [ApiConventionMethod(typeof(DefaultApiConventions), nameof(DefaultApiConventions.Put))]
     public async Task<ActionResult> Put(int id, CategoriaDTO categoriaDto)
     {
         if (id != categoriaDto.CategoriaId)
@@ -138,6 +179,9 @@ public class CategoriaController  : ControllerBase
     }
     [HttpDelete("id{id:int}")]
     [Authorize(Policy = "AdminOnly")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
+    [ProducesDefaultResponseType]
     public async Task<ActionResult<CategoriaDTO>> Delete(int id)
     {
         var categoria = await _repository.GetAsync(c => c.CategoriaId == id);
