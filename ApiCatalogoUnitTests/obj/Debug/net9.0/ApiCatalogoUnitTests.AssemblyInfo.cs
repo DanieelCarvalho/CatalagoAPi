@@ -11,13 +11,12 @@
 using System;
 using System.Reflection;
 
-[assembly: Microsoft.Extensions.Configuration.UserSecrets.UserSecretsIdAttribute("aspnet-CatalogoApi-f60ef76a-dcf9-4124-918c-8f4bfe33a7fe")]
-[assembly: System.Reflection.AssemblyCompanyAttribute("CatalogoApi")]
+[assembly: System.Reflection.AssemblyCompanyAttribute("ApiCatalogoUnitTests")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
 [assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+6bd54f98e754b7e6ccdbce4cd2092d31cf09166e")]
-[assembly: System.Reflection.AssemblyProductAttribute("CatalogoApi")]
-[assembly: System.Reflection.AssemblyTitleAttribute("CatalogoApi")]
+[assembly: System.Reflection.AssemblyProductAttribute("ApiCatalogoUnitTests")]
+[assembly: System.Reflection.AssemblyTitleAttribute("ApiCatalogoUnitTests")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
 
 // Gerado pela classe WriteCodeFragment do MSBuild.
