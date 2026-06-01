@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 using X.PagedList;
+using Microsoft.AspNetCore.Http;
 
 namespace CatalogoApi.Controllers;
 
@@ -18,6 +19,7 @@ namespace CatalogoApi.Controllers;
 [Route("api/[controller]")]
 [ApiController]
 [ApiConventionType(typeof(DefaultApiConventions))]
+[Authorize]
 public class ProdutosController : ControllerBase
 {
   
@@ -39,16 +41,30 @@ public class ProdutosController : ControllerBase
     /// </returns>
     [HttpGet]
     [Authorize(Policy = "UserOnly")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
+    [ProducesDefaultResponseType]
     public async Task<ActionResult<IEnumerable<ProdutoDTOResponse>>> Get()
     {
-        var produtos = await _produtoRepository.GetAllAsync();
 
-        if (produtos is null)
+        try
+        {
+
+        var produtos = await _produtoRepository.GetAllAsync();
+           
+
+            if (produtos is null)
             return NotFound("Produtos não encontrados");
 
         var produtosDto = produtos.ToProdutoDTOResponseList();
 
         return Ok(produtosDto);
+        }
+        catch
+        {
+            return BadRequest();
+        }
 
     }
     /// <summary>
@@ -62,6 +78,13 @@ public class ProdutosController : ControllerBase
     {
         var produto = await _produtoRepository.GetAsync(p => p.ProdutoId == id);
 
+        if (id <= 0 || id== null)
+        {
+            _logger.LogWarning("Id inválido: {Id}", id);
+            return BadRequest("Id inválido");
+        }
+
+
         if (produto is null){
             _logger.LogWarning("Produto com id {id} não encontrado", id);
             return NotFound("Produto não encontrado"); 
@@ -70,6 +93,7 @@ public class ProdutosController : ControllerBase
         var produtoDto = produto.ToProdutoDTOResponse();
         return Ok(produtoDto);
     }
+
     [Authorize]
     [HttpGet("categoria/{categoriaId}")]
     public async Task<ActionResult<IEnumerable<ProdutoDTOResponse>>> GetProdutosByCategoriaId([FromRoute]  int categoriaId)
@@ -153,6 +177,7 @@ public class ProdutosController : ControllerBase
         return Ok(produtoAtualizadoDto);
 
     }
+
     [Authorize]
     [HttpPatch("{id}/UpdatePartial")]
     public async Task<ActionResult<ProdutoDTOUpdateResponse>> Patch(int id, 

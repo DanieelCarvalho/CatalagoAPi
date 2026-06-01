@@ -1,7 +1,9 @@
 ﻿using CatalogoApi.Context;
+using CatalogoApi.Controllers;
 using CatalogoApi.Repositories;
 using CatalogoApi.Repositories.Interface;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 
 namespace ApiCatalogoUnitTests.UnitTest;
@@ -9,6 +11,7 @@ namespace ApiCatalogoUnitTests.UnitTest;
 public class ProdutosUnitTestController
 {
     public IProdutoRepository repository;
+    public ILogger<ProdutosController> logger;
     public static DbContextOptions<AppDbContext> dbContextOptions { get; }
 
     public static string connectionString =

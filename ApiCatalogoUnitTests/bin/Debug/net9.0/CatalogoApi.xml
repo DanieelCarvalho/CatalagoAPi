@@ -1,0 +1,143 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>CatalogoApi</name>
+    </assembly>
+    <members>
+        <member name="M:CatalogoApi.Controllers.AuthController.Login(CatalogoApi.DTOs.LoginModel)">
+            <summary>
+            Verifica as credenciais de um usuário
+            </summary>
+            <param name="model">Um objeto do tipo UsuarioDTO</param>
+            <returns>Status 200 e token para o cliente</returns>
+            <remarks> Retorna o Status 200 e o token</remarks>
+        </member>
+        <member name="M:CatalogoApi.Controllers.AuthController.Register(CatalogoApi.DTOs.RegisterModel)">
+            <summary>
+            Regista um novo usuário
+            </summary>
+            <param name="model">Um objeto UsuarioDTO</param>
+            <returns>Status 200</returns>
+            <remarks>Retorna o Status 200 e uma mensagem de sucesso</remarks>
+        </member>
+        <member name="M:CatalogoApi.Controllers.CategoriaController.Get">
+            <summary>
+            Obtem uma lista de onjetos Categorias
+            </summary>
+            <returns>
+            Uma lista de objetos Categoria
+            </returns>
+            
+        </member>
+        <member name="M:CatalogoApi.Controllers.CategoriaController.Get(System.Int32)">
+            <summary>
+            Obter uma Categoria pelo seu Id
+            </summary>
+            <param name="id"></param>
+            <returns> Objetos Categorias</returns>
+        </member>
+        <member name="M:CatalogoApi.Controllers.CategoriaController.Post(CatalogoApi.DTOs.CategoriaDTO)">
+            <summary>
+            Inclui uma nova categoria
+            </summary>
+            <remarks>
+            Exemplo de request:
+            POST api/categoria
+            {
+            "CategoriaId": 1,
+            "Nome": "Bebidas",
+            "ImagemUrl": "https://www.google.com/imagem/bebidas.png"
+            }
+            </remarks>
+            <param name="categoriaDto"></param>
+            <returns>Retorna um objeto Categorias incluído</returns>
+        </member>
+        <member name="M:CatalogoApi.Controllers.ProdutosController.Get">
+            <summary>
+            Exibe uma relação de produtos 
+            </summary>
+            <returns>
+            Retorna uma lista de objetos Produto
+            </returns>
+        </member>
+        <member name="M:CatalogoApi.Controllers.ProdutosController.Get(System.Int32)">
+            <summary>
+            Obtem o produto pelo id
+            </summary>
+            <param name="id">Código do produto</param>
+            <returns>Um objeto Produdo</returns>
+        </member>
+        <member name="T:CatalogoApi.Migrations.MigracaoInicial">
+            <inheritdoc />
+        </member>
+        <member name="M:CatalogoApi.Migrations.MigracaoInicial.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:CatalogoApi.Migrations.MigracaoInicial.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:CatalogoApi.Migrations.MigracaoInicial.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:CatalogoApi.Migrations.AjusteTabelas">
+            <inheritdoc />
+        </member>
+        <member name="M:CatalogoApi.Migrations.AjusteTabelas.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:CatalogoApi.Migrations.AjusteTabelas.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:CatalogoApi.Migrations.AjusteTabelas.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:CatalogoApi.Migrations.PopulaCategorias">
+            <inheritdoc />
+        </member>
+        <member name="M:CatalogoApi.Migrations.PopulaCategorias.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:CatalogoApi.Migrations.PopulaCategorias.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:CatalogoApi.Migrations.PopulaCategorias.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:CatalogoApi.Migrations.PopulaProdutos">
+            <inheritdoc />
+        </member>
+        <member name="M:CatalogoApi.Migrations.PopulaProdutos.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:CatalogoApi.Migrations.PopulaProdutos.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:CatalogoApi.Migrations.PopulaProdutos.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:CatalogoApi.Migrations.CriatabelaIdentity">
+            <inheritdoc />
+        </member>
+        <member name="M:CatalogoApi.Migrations.CriatabelaIdentity.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:CatalogoApi.Migrations.CriatabelaIdentity.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:CatalogoApi.Migrations.CriatabelaIdentity.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:CatalogoApi.Migrations.AjusteApplicationUser">
+            <inheritdoc />
+        </member>
+        <member name="M:CatalogoApi.Migrations.AjusteApplicationUser.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:CatalogoApi.Migrations.AjusteApplicationUser.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:CatalogoApi.Migrations.AjusteApplicationUser.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+    </members>
+</doc>

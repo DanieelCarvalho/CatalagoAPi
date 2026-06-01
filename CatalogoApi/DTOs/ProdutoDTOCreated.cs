@@ -15,7 +15,7 @@ public class ProdutoDTOCreated
 
     [Required]
     [StringLength(300)]
-    public string? Descrição { get; set; }
+    public string? Descricao { get; set; }
 
     [Required]
     [Column(TypeName = "decimal(10,2)")]

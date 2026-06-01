@@ -15,7 +15,7 @@ public static class ProdutoDTOMappingExtensions
         {
           ProdutoId = produto.ProdutoId,
             Nome = produto.Nome,
-            Descrição = produto.Descrição,
+            Descricao = produto.Descrição,
             Preco = produto.Preco,
             ImagemUrl = produto.ImagemUrl,
             Estoque = produto.Estoque,
@@ -32,7 +32,7 @@ public static class ProdutoDTOMappingExtensions
         {
           ProdutoId = produtoDTOCreated.ProdutoId,
             Nome = produtoDTOCreated.Nome,
-            Descrição = produtoDTOCreated.Descrição,
+            Descrição = produtoDTOCreated.Descricao,
             Preco = produtoDTOCreated.Preco,
             ImagemUrl = produtoDTOCreated.ImagemUrl,
             Estoque = produtoDTOCreated.Estoque,
@@ -104,7 +104,7 @@ public static class ProdutoDTOMappingExtensions
         {
             ProdutoId = produto.ProdutoId,
             Nome = produto.Nome,
-            Descrição = produto.Descrição,
+            Descricao = produto.Descrição,
             Preco = produto.Preco,
             ImagemUrl = produto.ImagemUrl,
             Estoque = produto.Estoque,
@@ -123,7 +123,7 @@ public static class ProdutoDTOMappingExtensions
         {
             ProdutoId = produto.ProdutoId,
             Nome = produto.Nome,
-            Descrição = produto.Descrição,
+            Descricao = produto.Descrição,
             Preco = produto.Preco,
             ImagemUrl = produto.ImagemUrl,
             Estoque = produto.Estoque,

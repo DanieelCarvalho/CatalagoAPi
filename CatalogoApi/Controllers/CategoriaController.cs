@@ -17,7 +17,10 @@ namespace CatalogoApi.Controllers;
 [EnableCors("OrigensComAcessoPermitido")]
 [Route("[controller]")]
 [ApiController]
-//[ApiConventionType(typeof(DefaultApiConventions))]
+[Authorize]
+
+
+[ApiConventionType(typeof(DefaultApiConventions))]
 
 //[EnableRateLimiting("Fixedwindow")]
 public class CategoriaController  : ControllerBase
@@ -39,7 +42,6 @@ public class CategoriaController  : ControllerBase
     /// Uma lista de objetos Categoria
     /// </returns>
     /// 
-    //[Authorize]
     [HttpGet]
     [DisableRateLimiting]
     [ServiceFilter(typeof(ApiLogginFilter))]
@@ -49,15 +51,23 @@ public class CategoriaController  : ControllerBase
     public async Task<ActionResult<IEnumerable<CategoriaDTO>>> Get()
     {
 
-        _logger.LogInformation("===============GET api/categorias/ produtos=================");
-        var categorias = await _repository.GetAllAsync();
-        if (categorias is null)
-            return NotFound("Categoria não encontrada");
+
+       
+            _logger.LogInformation("===============GET api/categorias/ produtos=================");
+            var categorias = await _repository.GetAllAsync();
+
+           
+            if (categorias is null)
+                return NotFound("Categoria não encontrada");
 
 
-        var categoriasDto =  categorias.ToCategoriaDTOList();
+            var categoriasDto = categorias.ToCategoriaDTOList();
 
-        return Ok(categoriasDto);
+            return Ok(categoriasDto);
+
+    
+
+      
 
     }
 
@@ -71,7 +81,11 @@ public class CategoriaController  : ControllerBase
     [HttpGet("{id:int}", Name = "ObterCategoria")]
     public async Task<ActionResult<CategoriaDTO>> Get(int id)
     {
-
+        if(id == null || id <= 0)
+        {
+            _logger.LogWarning("Id inválido...");
+            return BadRequest("Id de categoria inválido");
+        }
         var categoria = await _repository.GetAsync(c => c.CategoriaId == id);
 
         if (categoria is null)
@@ -87,7 +101,7 @@ public class CategoriaController  : ControllerBase
         return Ok(categoriaDto);
     }
 
-    //[Authorize]
+    
     [HttpGet("pagination")]
     public async Task<ActionResult<IEnumerable<CategoriaDTO>>> GetCategoriasPaginacao([FromQuery] CategoriasParameters categoriasParameters)
     {
@@ -97,7 +111,7 @@ public class CategoriaController  : ControllerBase
         //var categoriasDto = categorias.ToCategoriaDTOList();
         return ObterCategorias(categorias);
     }
-    //[Authorize]
+    
     [HttpGet("filter/nome/pagination")]
     public async Task<ActionResult<IEnumerable<CategoriaDTO>>> GetCategoriasFiltroNomePaginacao([FromQuery] CategoriaFiltroNome categoriaFiltroNome)
     {
@@ -137,7 +151,7 @@ public class CategoriaController  : ControllerBase
     /// </remarks>
     /// <param name="categoriaDto"></param>
     /// <returns>Retorna um objeto Categorias incluído</returns>
-    [Authorize]
+
     [HttpPost]
     public async Task<ActionResult<CategoriaDTO>> Post(CategoriaDTO categoriaDto)
     {
@@ -157,10 +171,10 @@ public class CategoriaController  : ControllerBase
                                         new { id = novaCategoriaDto.CategoriaId }, 
                                         categoria);
     }
-    [Authorize]
+
     [HttpPut("id{id:int}")]
     [ApiConventionMethod(typeof(DefaultApiConventions), nameof(DefaultApiConventions.Put))]
-    public async Task<ActionResult> Put(int id, CategoriaDTO categoriaDto)
+    public async Task<ActionResult<CategoriaDTO>> Put(int id, CategoriaDTO categoriaDto)
     {
         if (id != categoriaDto.CategoriaId)
         {
@@ -168,6 +182,11 @@ public class CategoriaController  : ControllerBase
             return BadRequest("Dados inválidos");
         }
 
+        if(categoriaDto is null)
+        {
+            _logger.LogWarning("Categoria com id {id} não encontrado", id);
+            return NotFound("Categoria não encontrada");
+        }
         var categoria = categoriaDto.ToCategoria();
 
         var categoriaAtualizada= await _repository.UpdateAsync(categoria);
@@ -178,7 +197,7 @@ public class CategoriaController  : ControllerBase
 
     }
     [HttpDelete("id{id:int}")]
-    [Authorize(Policy = "AdminOnly")]
+    //[Authorize(Policy = "AdminOnly")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
     [ProducesDefaultResponseType]

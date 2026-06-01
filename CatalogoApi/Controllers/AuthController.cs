@@ -12,6 +12,8 @@ namespace CatalogoApi.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
+[ApiConventionType(typeof(DefaultApiConventions))]
+
 public class AuthController : ControllerBase
 {
     private readonly ITokenService _tokenService;
