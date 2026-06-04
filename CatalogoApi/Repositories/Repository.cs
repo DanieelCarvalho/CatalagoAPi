@@ -21,7 +21,9 @@ public class Repository<T> : IRepository<T> where T : class
 
     public async Task<T?> GetAsync(Expression<Func<T, bool>> predicate)
     {
-       return await _context.Set<T>().AsNoTracking().FirstOrDefaultAsync(predicate);
+        System.Threading.Thread.Sleep(3000); // Simulando um atraso de 3 segundos
+
+        return await _context.Set<T>().AsNoTracking().FirstOrDefaultAsync(predicate);
     }
 
 

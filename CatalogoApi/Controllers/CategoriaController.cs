@@ -109,17 +109,35 @@ public class CategoriaController  : ControllerBase
             _logger.LogWarning("Id inválido...");
             return BadRequest("Id de categoria inválido");
         }
-        var categoria = await _repository.GetAsync(c => c.CategoriaId == id);
 
-        if (categoria is null)
+        var cacheCategoriaKey = $"Categoria_{id}";
+
+        if(!_cache.TryGetValue(cacheCategoriaKey, out CategoriaDTO? categoriaDto))
         {
-            _logger.LogWarning($"Categoria com id {id} não encontrada...");
-            return NotFound("Categoria não encontrado");
+           var categoria = await _repository.GetAsync(c => c.CategoriaId == id);
+
+            if (categoria is not null)
+            {
+               categoriaDto = categoria.ToCategoriaDTO();
+           
+               var cacheOptions = new MemoryCacheEntryOptions
+               {
+                   AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(30),
+                   SlidingExpiration = TimeSpan.FromSeconds(15),
+                   Priority = CacheItemPriority.High
+               };
+
+                _cache.Set(cacheCategoriaKey, categoriaDto, cacheOptions);
+
+
+            }
+            else
+            {
+                _logger.LogWarning($"Categoria com id {id} não encontrada...");
+                return NotFound("Categoria não encontrado");
+            }
+
         }
-
-      
-
-        var categoriaDto = categoria.ToCategoriaDTO();
 
         return Ok(categoriaDto);
     }
