@@ -15,6 +15,7 @@ public class Repository<T> : IRepository<T> where T : class
     }
     public async Task<IEnumerable<T>> GetAllAsync()
     {
+        System.Threading.Thread.Sleep(3000); // Simulando um atraso de 3 segundos
         return await _context.Set<T>().AsNoTracking().ToListAsync();
     }
 

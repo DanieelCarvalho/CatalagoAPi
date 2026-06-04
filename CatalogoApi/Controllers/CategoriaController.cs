@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.RateLimiting;
 using System.Text.Json;
 using X.PagedList;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace CatalogoApi.Controllers;
 
@@ -27,12 +28,17 @@ public class CategoriaController  : ControllerBase
 {
     private readonly ICategoriaRepository _repository;
     private readonly ILogger<CategoriaController> _logger;
+    private readonly IMemoryCache _cache;
+    private const string CacheCategoriasKey = "CacheCategorias";
+
 
     public CategoriaController(ICategoriaRepository repository,
-                               ILogger<CategoriaController> logger)
+                               ILogger<CategoriaController> logger,
+                               IMemoryCache cache)
     {
         _repository = repository;
         _logger = logger;
+        _cache = cache;
     }
 
     /// <summary>
@@ -48,27 +54,44 @@ public class CategoriaController  : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
     [ProducesDefaultResponseType]
+    
     public async Task<ActionResult<IEnumerable<CategoriaDTO>>> Get()
     {
 
+        if(!_cache.TryGetValue(CacheCategoriasKey, out IEnumerable<CategoriaDTO>? categoriasDto))
+        {
 
-       
             _logger.LogInformation("===============GET api/categorias/ produtos=================");
             var categorias = await _repository.GetAllAsync();
 
-           
-            if (categorias is null)
-                return NotFound("Categoria não encontrada");
+            //Executa este bloco SE categorias for nulo OU
+            //SE categorias não tiver nenhum elemento
+
+            if (categorias is not null && categorias.Any())
+            {
+
+                categoriasDto = categorias.ToCategoriaDTOList();
+
+                var cacheOptions = new MemoryCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(30),
+                    SlidingExpiration = TimeSpan.FromSeconds(15),
+                    Priority = CacheItemPriority.High
+                };
+                _cache.Set(CacheCategoriasKey, categoriasDto, cacheOptions);
+            }
+            else
+            {
+                _logger.LogWarning("Não existem categorias");
+                return NotFound("Não existem categorias");
+            }
 
 
-            var categoriasDto = categorias.ToCategoriaDTOList();
+            
+
+        }
 
             return Ok(categoriasDto);
-
-    
-
-      
-
     }
 
     /// <summary>
