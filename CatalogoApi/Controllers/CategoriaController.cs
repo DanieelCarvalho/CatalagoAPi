@@ -67,30 +67,15 @@ public class CategoriaController  : ControllerBase
             //Executa este bloco SE categorias for nulo OU
             //SE categorias não tiver nenhum elemento
 
-            if (categorias is not null && categorias.Any())
+            if (categorias is  null || !categorias.Any())
             {
-
-                categoriasDto = categorias.ToCategoriaDTOList();
-
-                var cacheOptions = new MemoryCacheEntryOptions
-                {
-                    AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(30),
-                    SlidingExpiration = TimeSpan.FromSeconds(15),
-                    Priority = CacheItemPriority.High
-                };
-                _cache.Set(CacheCategoriasKey, categoriasDto, cacheOptions);
-            }
-            else
-            {
-                _logger.LogWarning("Não existem categorias");
+            _logger.LogWarning("Não existem categorias");
                 return NotFound("Não existem categorias");
             }
 
-
-            
-
+            categoriasDto = categorias.ToCategoriaDTOList();
+            SetCache(CacheCategoriasKey, categoriasDto);
         }
-
             return Ok(categoriasDto);
     }
 
@@ -110,9 +95,9 @@ public class CategoriaController  : ControllerBase
             return BadRequest("Id de categoria inválido");
         }
 
-        var cacheCategoriaKey = $"Categoria_{id}";
+        var cacheCategoriaKey = GetCategoriasCacheKey(id);
 
-        if(!_cache.TryGetValue(cacheCategoriaKey, out CategoriaDTO? categoriaDto))
+        if (!_cache.TryGetValue(cacheCategoriaKey, out CategoriaDTO? categoriaDto))
         {
            var categoria = await _repository.GetAsync(c => c.CategoriaId == id);
 
@@ -142,41 +127,6 @@ public class CategoriaController  : ControllerBase
         return Ok(categoriaDto);
     }
 
-    
-    [HttpGet("pagination")]
-    public async Task<ActionResult<IEnumerable<CategoriaDTO>>> GetCategoriasPaginacao([FromQuery] CategoriasParameters categoriasParameters)
-    {
-        var categorias = await _repository.GetCategoriasAsync(categoriasParameters);
-     
-
-        //var categoriasDto = categorias.ToCategoriaDTOList();
-        return ObterCategorias(categorias);
-    }
-    
-    [HttpGet("filter/nome/pagination")]
-    public async Task<ActionResult<IEnumerable<CategoriaDTO>>> GetCategoriasFiltroNomePaginacao([FromQuery] CategoriaFiltroNome categoriaFiltroNome)
-    {
-        var categorias = await _repository.GetCategoriasFiltroNomeAsync(categoriaFiltroNome);
-        return ObterCategorias(categorias);
-    }
-
-    private ActionResult<IEnumerable<CategoriaDTO>> ObterCategorias(IPagedList<Categoria>? categorias)
-    {
-        if (categorias is null)
-            return NotFound("Categoria não encontrada");
-        var metadata = new
-        {
-            categorias.Count,
-            categorias.PageSize,
-            categorias.PageCount,
-            categorias.TotalItemCount,
-            categorias.HasNextPage,
-            categorias.HasPreviousPage
-        };
-        Response.Headers.Append("X-Pagination", JsonSerializer.Serialize(metadata));
-        var categoriasDto = categorias.ToCategoriaDTOList();
-        return Ok(categoriasDto);
-    }
 
     /// <summary>
     /// Inclui uma nova categoria
@@ -207,17 +157,10 @@ public class CategoriaController  : ControllerBase
         var cartegoriaCriada = await _repository.CreateAsync(categoria);
 
         _cache.Remove(CacheCategoriasKey);
+        var cacheKey = GetCategoriasCacheKey(cartegoriaCriada.CategoriaId);
 
-        var cacheKey = $"Categoria_{cartegoriaCriada.CategoriaId}";
+        SetCache(cacheKey, cartegoriaCriada.ToCategoriaDTO());
 
-        var cacheOptions = new MemoryCacheEntryOptions
-        {
-            AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(30),
-            SlidingExpiration = TimeSpan.FromSeconds(15),
-            Priority = CacheItemPriority.High
-        };
-
-        _cache.Set(cacheKey, cartegoriaCriada.ToCategoriaDTO(), cacheOptions);
 
         var novaCategoriaDto = cartegoriaCriada.ToCategoriaDTO();
 
@@ -245,14 +188,7 @@ public class CategoriaController  : ControllerBase
 
         var categoriaAtualizada= await _repository.UpdateAsync(categoria);
 
-        _cache.Set($"CacheCategoria_{id}", categoriaAtualizada, new MemoryCacheEntryOptions
-        {
-            AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(30),
-            SlidingExpiration = TimeSpan.FromSeconds(15),
-            Priority = CacheItemPriority.High
-        });
-
-        _cache.Remove(CacheCategoriasKey);
+        InvalidateCacheAfterChange(id, categoriaAtualizada.ToCategoriaDTO());
 
         var categoriaAtualizadaDto = categoriaAtualizada.ToCategoriaDTO();
 
@@ -276,12 +212,73 @@ public class CategoriaController  : ControllerBase
 
        var categoraiExcluida = await _repository.DeleteAsync(categoria);
 
-        _cache.Remove($"CacheCategoria_{id}");
-        _cache.Remove(CacheCategoriasKey);
+        InvalidateCacheAfterChange(id);
 
         var categoriaExcluidaDto =  categoraiExcluida.ToCategoriaDTO();
 
         return Ok(categoriaExcluidaDto);
     }
+
+    [HttpGet("pagination")]
+    public async Task<ActionResult<IEnumerable<CategoriaDTO>>> GetCategoriasPaginacao([FromQuery] CategoriasParameters categoriasParameters)
+    {
+        var categorias = await _repository.GetCategoriasAsync(categoriasParameters);
+
+
+        //var categoriasDto = categorias.ToCategoriaDTOList();
+        return ObterCategorias(categorias);
+    }
+
+    [HttpGet("filter/nome/pagination")]
+    public async Task<ActionResult<IEnumerable<CategoriaDTO>>> GetCategoriasFiltroNomePaginacao([FromQuery] CategoriaFiltroNome categoriaFiltroNome)
+    {
+        var categorias = await _repository.GetCategoriasFiltroNomeAsync(categoriaFiltroNome);
+        return ObterCategorias(categorias);
+    }
+
+    private ActionResult<IEnumerable<CategoriaDTO>> ObterCategorias(IPagedList<Categoria>? categorias)
+    {
+        if (categorias is null)
+            return NotFound("Categoria não encontrada");
+        var metadata = new
+        {
+            categorias.Count,
+            categorias.PageSize,
+            categorias.PageCount,
+            categorias.TotalItemCount,
+            categorias.HasNextPage,
+            categorias.HasPreviousPage
+        };
+        Response.Headers.Append("X-Pagination", JsonSerializer.Serialize(metadata));
+        var categoriasDto = categorias.ToCategoriaDTOList();
+        return Ok(categoriasDto);
+    }
+
+    private string GetCategoriasCacheKey(int id) => $"CacheCategoria_{id}";
+
+    private void SetCache<T>(string cacheKey, T data)
+    {
+        var cacheOptions = new MemoryCacheEntryOptions
+        {
+            AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(30),
+            SlidingExpiration = TimeSpan.FromSeconds(15),
+            Priority = CacheItemPriority.High
+        };
+        _cache.Set(cacheKey, data, cacheOptions);
+    }
+
+    private void InvalidateCacheAfterChange(int id, CategoriaDTO? categoriaDto = null)
+    {
+        _cache.Remove(CacheCategoriasKey);
+        _cache.Remove(GetCategoriasCacheKey(id));
+
+        if( categoriaDto != null )
+        {
+            SetCache(GetCategoriasCacheKey(id), categoriaDto);
+        }
+
+    }
+    
+
 
 }
