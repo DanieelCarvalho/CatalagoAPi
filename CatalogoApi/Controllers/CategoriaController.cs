@@ -206,6 +206,19 @@ public class CategoriaController  : ControllerBase
 
         var cartegoriaCriada = await _repository.CreateAsync(categoria);
 
+        _cache.Remove(CacheCategoriasKey);
+
+        var cacheKey = $"Categoria_{cartegoriaCriada.CategoriaId}";
+
+        var cacheOptions = new MemoryCacheEntryOptions
+        {
+            AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(30),
+            SlidingExpiration = TimeSpan.FromSeconds(15),
+            Priority = CacheItemPriority.High
+        };
+
+        _cache.Set(cacheKey, cartegoriaCriada.ToCategoriaDTO(), cacheOptions);
+
         var novaCategoriaDto = cartegoriaCriada.ToCategoriaDTO();
 
         return new CreatedAtRouteResult("ObterCategoria", 
@@ -217,7 +230,7 @@ public class CategoriaController  : ControllerBase
     [ApiConventionMethod(typeof(DefaultApiConventions), nameof(DefaultApiConventions.Put))]
     public async Task<ActionResult<CategoriaDTO>> Put(int id, CategoriaDTO categoriaDto)
     {
-        if (id != categoriaDto.CategoriaId)
+        if (id != categoriaDto.CategoriaId || id <= 0)
         {
             _logger.LogWarning("Dados inválidos...");
             return BadRequest("Dados inválidos");
@@ -232,6 +245,15 @@ public class CategoriaController  : ControllerBase
 
         var categoriaAtualizada= await _repository.UpdateAsync(categoria);
 
+        _cache.Set($"CacheCategoria_{id}", categoriaAtualizada, new MemoryCacheEntryOptions
+        {
+            AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(30),
+            SlidingExpiration = TimeSpan.FromSeconds(15),
+            Priority = CacheItemPriority.High
+        });
+
+        _cache.Remove(CacheCategoriasKey);
+
         var categoriaAtualizadaDto = categoriaAtualizada.ToCategoriaDTO();
 
         return Ok(categoriaAtualizadaDto);
@@ -245,12 +267,17 @@ public class CategoriaController  : ControllerBase
     public async Task<ActionResult<CategoriaDTO>> Delete(int id)
     {
         var categoria = await _repository.GetAsync(c => c.CategoriaId == id);
+
         if (categoria is null)
         {
             _logger.LogWarning($"Categoria com id {id} não encontrada...");
             return NotFound("Categoria não encontrada");
         }
+
        var categoraiExcluida = await _repository.DeleteAsync(categoria);
+
+        _cache.Remove($"CacheCategoria_{id}");
+        _cache.Remove(CacheCategoriasKey);
 
         var categoriaExcluidaDto =  categoraiExcluida.ToCategoriaDTO();
 
